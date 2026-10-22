@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>情動イメージング演習 進捗報告スライド | OpenFaceによる情動情報解析</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at 15% 15%, #0f172a 0%, #020617 100%);
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --card-hover-border: rgba(56, 189, 248, 0.4);
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      --text-accent: #38bdf8;
+      --accent-blue: #2563eb;
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --code-bg: #0b1120;
+      --code-border: rgba(56, 189, 248, 0.15);
+      --shadow-glow: 0 10px 30px -10px rgba(14, 165, 233, 0.18);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', 'Noto Sans JP', sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+      user-select: none;
+    }
+
+    /* Deck container */
+    #deck-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slide {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      padding: 2.8rem 4.5rem 5rem 4.5rem;
+      display: flex;
+      flex-direction: column;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateX(30px) scale(0.98);
+      transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+
+    .slide.active {
+      opacity: 1;
+      visibility: visible;
+      transform: translateX(0) scale(1);
+      pointer-events: auto;
+    }
+
+    /* Header Bar */
+    .slide-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--card-border);
+      padding-bottom: 0.8rem;
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.35rem 0.85rem;
+      border-radius: 9999px;
+      background: rgba(37, 99, 235, 0.25);
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
+    }
+
+    .badge.emerald {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #34d399;
+    }
+
+    .badge.amber {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fbbf24;
+    }
+
+    .slide-title-wrap h2 {
+      font-size: 1.65rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #ffffff;
+    }
+
+    .slide-title-wrap p {
+      font-size: 0.9rem;
+      color: var(--text-sub);
+      margin-top: 0.15rem;
+    }
+
+    .slide-meta {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* Slide Content Layouts */
+    .content-grid {
+      display: grid;
+      grid-template-columns: 1.15fr 1fr;
+      gap: 2rem;
+      flex: 1;
+      min-height: 0;
+      align-items: stretch;
+    }
+
+    .content-full {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 0;
+    }
+
+    /* Cards */
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--card-border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      overflow-y: auto;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+
+    .glass-card h3 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .glass-card h3 span {
+      color: var(--text-accent);
+    }
+
+    .bullet-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+    }
+
+    .bullet-list li {
+      font-size: 0.95rem;
+      line-height: 1.6;
+      color: #cbd5e1;
+      position: relative;
+      padding-left: 1.4rem;
+    }
+
+    .bullet-list li::before {
+      content: "•";
+      position: absolute;
+      left: 0.2rem;
+      color: var(--text-accent);
+      font-size: 1.2rem;
+      line-height: 1.2;
+    }
+
+    .bullet-list li strong {
+      color: #ffffff;
+      font-weight: 600;
+    }
+
+    /* Code Block */
+    .code-box {
+      background: var(--code-bg);
+      border: 1px solid var(--code-border);
+      border-radius: 0.75rem;
+      padding: 1rem 1.2rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.82rem;
+      line-height: 1.55;
+      color: #93c5fd;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .code-box-header {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #64748b;
+      margin-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Image Display Container */
+    .image-preview-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--card-border);
+      border-radius: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+      overflow: hidden;
+      box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+
+    .image-preview-card img {
+      max-width: 100%;
+      max-height: calc(100vh - 230px);
+      object-fit: contain;
+      border-radius: 0.5rem;
+      transition: transform 0.3s ease;
+      filter: drop-shadow(0 6px 16px rgba(0,0,0,0.5));
+    }
+
+    .image-caption {
+      margin-top: 0.65rem;
+      font-size: 0.82rem;
+      color: var(--text-sub);
+      font-family: 'JetBrains Mono', monospace;
+      text-align: center;
+    }
+
+    /* Slide 1 Hero */
+    .hero-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      text-align: center;
+      gap: 1.5rem;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.5rem 1.2rem;
+      border-radius: 9999px;
+      background: rgba(37, 99, 235, 0.2);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      color: #38bdf8;
+      font-size: 0.95rem;
+      font-weight: 600;
+    }
+
+    .hero-title {
+      font-size: 3.2rem;
+      font-weight: 800;
+      line-height: 1.2;
+      background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 50%, #38bdf8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      max-width: 900px;
+    }
+
+    .hero-subtitle {
+      font-size: 1.4rem;
+      color: #94a3b8;
+      max-width: 800px;
+      line-height: 1.6;
+    }
+
+    .hero-tags {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .tag-item {
+      padding: 0.5rem 1rem;
+      border-radius: 0.5rem;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      font-size: 0.85rem;
+      color: #cbd5e1;
+    }
+
+    /* 3 Column Grid for Slide 2 */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      flex: 1;
+      min-height: 0;
+    }
+
+    .summary-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 1rem;
+      padding: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .summary-card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--accent-blue);
+    }
+
+    .summary-card.done::before {
+      background: var(--accent-emerald);
+    }
+
+    .summary-card.advanced::before {
+      background: linear-gradient(90deg, #8b5cf6, #ec4899);
+    }
+
+    /* Bottom Control Bar */
+    #bottom-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 48px;
+      background: rgba(2, 6, 23, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      z-index: 100;
+    }
+
+    .controls-left, .controls-right {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .ctrl-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: #f8fafc;
+      font-size: 0.85rem;
+      padding: 0.35rem 0.75rem;
+      border-radius: 0.375rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s ease;
+      font-family: inherit;
+    }
+
+    .ctrl-btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: rgba(56, 189, 248, 0.4);
+      color: #38bdf8;
+    }
+
+    .progress-track {
+      flex: 1;
+      max-width: 400px;
+      height: 4px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      margin: 0 1.5rem;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #38bdf8, #2563eb);
+      width: 10%;
+      transition: width 0.3s ease;
+    }
+
+    .slide-counter {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text-sub);
+    }
+
+    @media print {
+      @page {
+        size: 16in 9in;
+        margin: 0;
+      }
+      *, *::before, *::after {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      html, body {
+        width: 16in !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: #020617 !important;
+      }
+      #deck-container {
+        display: block !important;
+        position: static !important;
+        width: 16in !important;
+        height: auto !important;
+      }
+      .slide {
+        position: relative !important;
+        top: auto !important;
+        left: auto !important;
+        width: 16in !important;
+        height: 9in !important;
+        min-height: 9in !important;
+        max-height: 9in !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        transform: none !important;
+        page-break-after: always !important;
+        break-after: page !important;
+        padding: 2.2rem 3.5rem !important;
+        display: flex !important;
+        flex-direction: column !important;
+        box-sizing: border-box !important;
+        background: radial-gradient(circle at 15% 15%, #0f172a 0%, #020617 100%) !important;
+      }
+      .image-preview-card img {
+        max-height: 5.2in !important;
+      }
+      #bottom-bar {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<div id="deck-container">
+
+  <!-- SLIDE 1: Cover -->
+  <section class="slide active" id="slide-1">
+    <div class="hero-container">
+      <div class="hero-badge">
+        <span>✨</span> 情動イメージング演習 進捗報告プレゼンテーション
+      </div>
+      <h1 class="hero-title">OpenFaceを用いた顔画像からの<br>情動情報解析・時系列実装</h1>
+      <p class="hero-subtitle">
+        〜 テキスト第1回〜第3回課題の実装完了と独自発展システムの開発報告 〜
+      </p>
+      <div class="hero-tags">
+        <div class="tag-item">📍 情報・データサイエンス学部 3年</div>
+        <div class="tag-item">🗓️ 2026年10月22日 (Day 3)</div>
+        <div class="tag-item">⚡ 成果物：Pythonコード9点・可視化グラフ8点・同期プレイヤー</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 2: Overall Progress Summary -->
+  <section class="slide" id="slide-2">
+    <div class="slide-header">
+      <div class="header-left">
+        <span class="badge emerald">PROGRESS SUMMARY</span>
+        <div class="slide-title-wrap">
+          <h2>演習全体の進捗状況サマリー</h2>
+          <p>シラバス全4回に対する我々の実作業（Day 1・Day 2）での前倒し達成対比</p>
+        </div>
+      </div>
+      <div class="slide-meta">Slide 02 / 10</div>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-card done">
+        <h3><span>01.</span> 第1回相当 (Day 1実施)</h3>
+        <p style="color: #38bdf8; font-size: 0.9rem; font-weight: 600;">顔を「データ」として測る</p>
+        <ul class="bullet-list">
+          <li><strong>OpenFace環境の稼働確認</strong>と動画からの特徴量抽出</li>
+          <li><strong>頭部姿勢(Head Pose)解析:</strong> Pitch, Yaw, Rollの3軸角度変化を抽出</li>
+          <li><strong>成果物:</strong> <code>plot_sayu.py</code> / <code>Sayu_pose.png</code></li>
+          <li><strong>知見:</strong> 身体動作の動画目視から客観的数値時系列への変換を実証</li>
+        </ul>
+      </div>
+      <div class="summary-card done">
+        <h3><span>02.</span> 第2回相当 (Day 1実施)</h3>
+        <p style="color: #38bdf8; font-size: 0.9rem; font-weight: 600;">表情を数値として測る</p>
+        <ul class="bullet-list">
+          <li><strong>Action Unit (AU) の時系列可視化:</strong> 笑顔(AU06, AU12)と困惑(AU04)</li>
+          <li><strong>驚き(Surprise)の複合AU分析:</strong> AU01, 02, 05, 25, 26の同期</li>
+          <li><strong>独自情動指標の作成:</strong> Happy, Surprise, Sadness を数式モデル化</li>
+          <li><strong>成果物:</strong> <code>2-2.py</code>, <code>2-3.py</code>, <code>2-kadai.py</code></li>
+        </ul>
+      </div>
+      <div class="summary-card advanced">
+        <h3><span>03.</span> 第3回相当 (Day 2実施)</h3>
+        <p style="color: #c084fc; font-size: 0.9rem; font-weight: 600;">時間変化から情動を読む + 独自発展</p>
+        <ul class="bullet-list">
+          <li><strong>時系列差分(diff) & イベント検出:</strong> 表情急変点の抽出とフラグ化</li>
+          <li><strong>ノイズ平滑化:</strong> 移動平均 (rolling mean) によるトレンド抽出</li>
+          <li><strong>Emotion Timeline構築:</strong> 4段統合プロット (<code>3-hukusen.py</code>)</li>
+          <li><strong>独自発展:</strong> OpenCV×Matplotlib動画同期プレイヤー (<code>3-WB.py</code>)</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 3: Day 1 - Head Pose -->
+  <section class="slide" id="slide-3">
+    <div class="slide-header">
+      <div class="header-left">
+        <span class="badge">DAY 1 実績 (1)</span>
+        <div class="slide-title-wrap">
+          <h2>頭部姿勢の時系列可視化 (Head Pose)</h2>
+          <p>動画中の頭部運動（左右・上下・傾き）を客観的な角度（rad）データとして抽出</p>
+        </div>
+      </div>
+      <div class="slide-meta">Slide 03 / 10</div>
+    </div>
+    <div class="content-grid">
+      <div class="glass-card">
+        <h3><span>■</span> 実施内容と技術ポイント</h3>
+        <ul class="bullet-list">
+          <li><strong>対象データ:</strong> <code>Sayu.csv</code> (頭部運動動画のOpenFace解析結果)</li>
+          <li><strong>抽出変数:</strong> <code>pose_Rx</code> (Pitch: 上下), <code>pose_Ry</code> (Yaw: 左右), <code>pose_Rz</code> (Roll: 傾き)</li>
+          <li><strong>解析意義:</strong> 「首を振った」という主観的観察を、ラジアン単位の客観時系列ピークとして分離・同定可能に。</li>
+        </ul>
+        <div class="code-box">
+          <div class="code-box-header"><span>plot_sayu.py (抜粋)</span><span>Python</span></div>
+df = pd.read_csv('Sayu.csv')
+df.columns = df.columns.str.strip()
+
+# pose_Rx, pose_Ry, pose_Rz の時系列プロット
+plt.plot(df['timestamp'], df['pose_Rx'], label='Pitch (Rx)')
+plt.plot(df['timestamp'], df['pose_Ry'], label='Yaw (Ry)')
+plt.plot(df['timestamp'], df['pose_Rz'], label='Roll (Rz)')
+plt.legend(); plt.savefig('Sayu_pose.png')
+        </div>
+        <ul class="bullet-list">
+          <li><strong>考察:</strong> 左右運動時に <code>pose_Ry</code> が明瞭に±0.5 rad以上の振れ幅を記録。</li>
+        </ul>
+      </div>
+      <div class="image-preview-card">
+        <img src="images/Sayu_pose.png" alt="Sayu Head Pose">
+        <div class="image-caption">図: Sayu_pose.png (頭部3軸回転角の時系列プロット)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 4: Day 1 - Action Unit (2-2.py) -->
+  <section class="slide" id="slide-4">
+    <div class="slide-header">
+      <div class="header-left">
+        <span class="badge">DAY 1 実績 (2)</span>
+        <div class="slide-title-wrap">
+          <h2>Action Unit (AU) による顔表情の数値化</h2>
+          <p>FACS（顔面動作符号化システム）に基づく微小筋肉運動の強度定量化</p>
+        </div>
+      </div>
+      <div class="slide-meta">Slide 04 / 10</div>
+    </div>
+    <div class="content-grid">
+      <div class="glass-card">
+        <h3><span>■</span> 観測対象と筋運動の対応</h3>
+        <ul class="bullet-list">
+          <li><strong>AU06_r (頬上げ):</strong> 眼輪筋の収縮。自然な笑顔で強く生起。</li>
+          <li><strong>AU12_r (口角上げ):</strong> 大頬骨筋の収縮。笑顔の主要決定因子。</li>
+          <li><strong>AU04_r (眉下げ):</strong> 皺眉筋の収縮。困惑・集中・不快時に上昇。</li>
+        </ul>
+        <div class="code-box">
+          <div class="code-box-header"><span>2-2.py</span><span>Python</span></div>
+df = pd.read_csv('2-2.csv')
+df.columns = df.columns.str.strip()
+
+plt.plot(df['timestamp'], df['AU06_r'], label='AU06 (Cheek Raiser)')
+plt.plot(df['timestamp'], df['AU12_r'], label='AU12 (Lip Corner Puller)')
+plt.plot(df['timestamp'], df['AU04_r'], label='AU04 (Brow Lowerer)')
+plt.legend(); plt.xlabel('Time[s]'); plt.ylabel('AU Intensity')
+plt.show()
+        </div>
+        <ul class="bullet-list">
+          <li><strong>考察:</strong> 中盤の笑顔区間において、AU06とAU12が同期してピークを形成。主観に頼らず客観的強度変化として記録。</li>
+        </ul>
+      </div>
+      <div class="image-preview-card">
+        <img src="images/2-2.png" alt="AU06, AU12, AU04 Intensity">
+        <div class="image-caption">図: 2-2.png (AU06, AU12, AU04 の時系列変化)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 5: Day 1 - Surprise & Custom Emotion Index (2-3.py & 2-kadai.py) -->
+  <section class="slide" id="slide-5">
+    <div class="slide-header">
+      <div class="header-left">
+        <span class="badge">DAY 1 実績 (3)</span>
+        <div class="slide-title-wrap">
+          <h2>複合AU解析と独自情動指標のモデリング</h2>
+          <p>驚き(Surprise)の複数AU連動解析と、独自感情スコア（Happy, Sadness等）の設計</p>
+        </div>
+      </div>
+      <div class="slide-meta">Slide 05 / 10</div>
+    </div>
+    <div class="content-grid">
+      <div class="glass-card">
+        <h3><span>■</span> 驚き区間のAU多変量解析 (2-3.py)</h3>
+        <p style="font-size:0.88rem; color:#cbd5e1;">内側/外側眉上げ(AU01,02)、上まぶた上げ(AU05)、開口(AU25,26)の共起を検証。</p>
+        <div class="image-preview-card" style="padding:0.5rem; height:180px;">
+          <img src="images/2-3.png" alt="Surprise AUs" style="max-height:160px;">
+        </div>
+        <h3><span>■</span> 独自情動指標の設計 (2-kadai.py)</h3>
+        <div class="code-box">
+          <div class="code-box-header"><span>2-kadai.py</span><span>Python</span></div>
+df["happy"] = df["AU25_r"]
+df["surprise"] = df["AU01_r"] + df["AU02_r"] + df["AU05_r"] + df["AU26_r"]
+df["sadness"] = df["AU04_r"]
+        </div>
+      </div>
+      <div class="image-preview-card">
+        <img src="images/2-kadai.png" alt="Custom Emotion Index">
+        <div class="image-caption">図: 2-kadai.png (独自指標 Happy / Surprise / Sadness の時系列)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 6: Day 2 - Time-series Diff & Event Detection -->
+  <section class="slide" id="slide-6">
+    <div class="slide-header">
+      <div class="header-left">
+        <span class="badge">DAY 2 実績 (1)</span>
+        <div class="slide-title-wrap">
+          <h2>時系列差分とイベント検出フラグ化</h2>
+          <p>静止画的特徴から動画時系列へ：急峻な変化点の抽出としきい値による離散イベント化</p>
+        </div>
+      </div>
+      <div class="slide-meta">Slide 06 / 10</div>
+    </div>
+    <div class="content-grid">
+      <div class="glass-card">
+        <h3><span>01.</span> フレーム間差分による変化点検出 (3-1.py)</h3>
+        <p style="font-size: 0.9rem; color: #cbd5e1;">
+          「値の高さ」だけでなく、表情が動き出した<strong>「立ち上がり（モーメント）」</strong>を <code>df["AU12_r"].diff()</code> で抽出。
+        </p>
+        <div class="image-preview-card" style="padding:0.4rem; height:180px;">
+          <img src="images/3-1.png" alt="AU12 Diff" style="max-height:160px;">
+        </div>
+        <h3><span>02.</span> 閾値判定によるイベントフラグ化 (3-2.py)</h3>
+        <div class="code-box">
+          <div class="code-box-header"><span>3-2.py (抜粋)</span><span>Python</span></div>
+# 閾値2を超えた区間を笑顔イベント(1)として離散系列化
+df["smileFlag"] = (df["AU12_r"] > 2).astype(int)
+        </div>
+        <p style="font-size: 0.85rem; color: #94a3b8;">
+          連続値を0/1のイベント生起系列として扱うことで、開始・終了時刻や継続時間を自動計算可能に。
+        </p>
+      </div>
+      <div class="image-preview-card">
+        <img src="images/3-2.png" alt="Smile Flag">
+        <div class="image-caption">図: 3-2.png (smileFlag による笑顔イベントの区間検出)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 7: Day 2 - Moving Average (3-2_MA.py) -->
+  <section class="slide" id="slide-7">
+    <div class="slide-header">
+      <div class="header-left">
+        <span class="badge">DAY 2 実績 (2)</span>
+        <div class="slide-title-wrap">
+          <h2>移動平均フィルタによるノイズ低減と平滑化</h2>
+          <p>トラッキングの微小振動を除去し、本質的な情動ダイナミクスを抽出</p>
+        </div>
+      </div>
+      <div class="slide-meta">Slide 07 / 10</div>
+    </div>
+    <div class="content-grid">
+      <div class="glass-card">
+        <h3><span>■</span> 課題と平滑化アルゴリズム</h3>
+        <ul class="bullet-list">
+          <li><strong>課題:</strong> 顔トラッキングでは、照明や微小な頭部揺らぎによってフレーム単位のスパイクノイズが混入する。</li>
+          <li><strong>手法:</strong> 移動平均（Rolling Mean with window=8, center=True）を適用。</li>
+        </ul>
+        <div class="code-box">
+          <div class="code-box-header"><span>3-2_MA.py</span><span>Python</span></div>
+df["AU_smooth"] = (
+    df["AU12_r"]
+    .rolling(window=8, center=True)
+    .mean()
+)
+
+plt.plot(df['timestamp'], df["AU12_r"], label="Raw")
+plt.plot(df['timestamp'], df["AU_smooth"], label="AU_smooth")
+plt.legend(); plt.show()
+        </div>
+        <ul class="bullet-list">
+          <li><strong>考察（トレードオフの検証）:</strong> window=8（約0.25秒）を採用することで、笑顔の立ち上がり遅延を最小限に抑えつつ高周波振動を効果的に抑制。</li>
+        </ul>
+      </div>
+      <div class="image-preview-card">
+        <img src="images/3-2_MA.png" alt="Moving Average">
+        <div class="image-caption">図: 3-2_MA.png (生データ vs 移動平均平滑化データの比較)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 8: Day 2 - Emotion Timeline (3-hukusen.py) -->
+  <section class="slide" id="slide-8">
+    <div class="slide-header">
+      <div class="header-left">
+        <span class="badge emerald">DAY 2 実績 (3)</span>
+        <div class="slide-title-wrap">
+          <h2>複合時系列可視化（Emotion Timeline）の構築</h2>
+          <p>テキスト第3コマの到達目標：複数指標（表情・頭部・まばたき）の多段同期プロット</p>
+        </div>
+      </div>
+      <div class="slide-meta">Slide 08 / 10</div>
+    </div>
+    <div class="content-grid">
+      <div class="glass-card">
+        <h3><span>■</span> 4段マルチプロットの構成定義</h3>
+        <ul class="bullet-list">
+          <li><strong>段1: Smile Score</strong> <code>(AU12_r > 2)</code> → 笑顔生起イベント</li>
+          <li><strong>段2: AU04</strong> <code>(AU04_r > 1)</code> → 眉間の緊張・集中・困惑</li>
+          <li><strong>段3: Head movement</strong> <code>(pose_Rz.diff() < -0.005)</code> → 首の急峻な傾き</li>
+          <li><strong>段4: Blink</strong> <code>(AU45_c > 0)</code> → まばたき検出パルス</li>
+        </ul>
+        <div class="code-box">
+          <div class="code-box-header"><span>3-hukusen.py (抜粋)</span><span>Python</span></div>
+fig, axes = plt.subplots(4, 1, figsize=(10, 8), sharex=True)
+axes[0].plot(df['timestamp'], df["Smile Score"], color="tab:blue")
+axes[1].plot(df['timestamp'], df["AU04"], color="tab:orange")
+axes[2].plot(df['timestamp'], df["Head movement"], color="tab:green")
+axes[3].plot(df['timestamp'], df["Blink"], color="tab:red")
+plt.tight_layout(); plt.show()
+        </div>
+        <ul class="bullet-list">
+          <li><strong>成果:</strong> 異種指標が同じ時間軸で並ぶことで、「首の傾きと同時に笑顔が生じた」といった<strong>共起パターン</strong>を直観的に把握可能に。</li>
+        </ul>
+      </div>
+      <div class="image-preview-card">
+        <img src="images/3-hukusen.png" alt="Emotion Timeline">
+        <div class="image-caption">図: 3-hukusen.png (4段マルチプロットによるEmotion Timeline)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 9: Advanced Work - Synchronized Player (3-WB.py) -->
+  <section class="slide" id="slide-9">
+    <div class="slide-header">
+      <div class="header-left">
+        <span class="badge amber">ADVANCED WORK</span>
+        <div class="slide-title-wrap">
+          <h2>動画・時系列グラフ リアルタイム同期プレイヤー</h2>
+          <p>テキストの構想をさらに発展：OpenCVとMatplotlibのアニメーションによる完全同期可視化</p>
+        </div>
+      </div>
+      <div class="slide-meta">Slide 09 / 10</div>
+    </div>
+    <div class="content-grid">
+      <div class="glass-card">
+        <h3><span>■</span> 独自開発のアーキテクチャ (3-WB.py)</h3>
+        <ul class="bullet-list">
+          <li><strong>開発背景:</strong> テキスト記載の「上段に動画、中段にAU、下段に頭部運動」という理想構成を静止画ではなく<strong>再生可能な同期アニメーション</strong>として具現化。</li>
+          <li><strong>技術スタック:</strong> <code>cv2.VideoCapture</code> + <code>matplotlib.animation.FuncAnimation</code></li>
+          <li><strong>連動機構:</strong> 現在フレームの描画と同時に、下部グラフの赤色破線バー（<code>axvline</code>）が時系列上を追従。</li>
+        </ul>
+        <div class="code-box">
+          <div class="code-box-header"><span>3-WB.py (抜粋)</span><span>Python</span></div>
+gs = fig.add_gridspec(3, 1, height_ratios=[2, 1, 1])
+def update(frame_idx):
+    ret, frame = cap.read()
+    im.set_data(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+    current_time = df['timestamp'].iloc[frame_idx]
+    line_au.set_xdata([current_time, current_time])
+    line_head.set_xdata([current_time, current_time])
+    return im, line_au, line_head
+        </div>
+        <ul class="bullet-list">
+          <li><strong>絶大な効果:</strong> 映像の実際の表情と数値ピークの遅延やズレを瞬時に目視検証できるアノテーション基盤が完成。</li>
+        </ul>
+      </div>
+      <div class="image-preview-card">
+        <img src="images/3-WB.png" alt="Synchronized Player Frame">
+        <div class="image-caption">図: 3-WB.png (上段: 動画フレーム / 中段: AU04 / 下段: Head movement 同期スナップショット)</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SLIDE 10: Conclusion & Next Step -->
+  <section class="slide" id="slide-10">
+    <div class="slide-header">
+      <div class="header-left">
+        <span class="badge emerald">CONCLUSION & NEXT STEP</span>
+        <div class="slide-title-wrap">
+          <h2>成果のまとめと第4回（ミニプロジェクト）への展望</h2>
+          <p>第4回に向けた挑戦：マルチモーダル特徴量による『嘘発見器』の精度向上とアプリ開発</p>
+        </div>
+      </div>
+      <div class="slide-meta">Slide 10 / 10</div>
+    </div>
+    <div class="content-grid">
+      <div class="glass-card">
+        <h3><span>■</span> ここまでの到達点（基盤確立）</h3>
+        <ul class="bullet-list">
+          <li><strong>実活動2日間でテキスト全3回分を完全走破:</strong><br>
+            OpenFaceによる特徴量抽出（頭部姿勢・AU・視線・瞬目）から、FACS/AU解析、時系列差分、ノイズ平滑化、Emotion Timelineまで一貫した解析パイプラインを確立。
+          </li>
+          <li><strong>独自同期アニメーションシステムの完成 (3-WB.py):</strong><br>
+            動画と時系列データを完全同期させるビューアを独自開発。
+          </li>
+          <li><strong>データサイエンスとしての重要な視座:</strong><br>
+            「Pixel → Feature → Behavior → State → Emotion」の推論階層を学び、<strong>観測（筋運動）と解釈（心理・情動推定）を混同しない</strong>厳密な分析姿勢を習得。
+          </li>
+        </ul>
+      </div>
+      <div class="glass-card">
+        <h3><span>■</span> 第4回 計画：『嘘発見器』の高度化＆アプリ開発</h3>
+        <ul class="bullet-list">
+          <li><strong>① 嘘発見（虚偽検出）の精度向上アプローチ:</strong><br>
+            • <strong>多変量特徴の統合:</strong> まばたき急増(AU45)、視線の泳ぎ(gaze)、作り笑顔(AU12有/AU06無)、眉間の緊張(AU04)の複合解析<br>
+            • <strong>微表情の差分検出:</strong> 質問直後の急峻な表情変化（マイクロエクスプレッション）を <code>diff()</code> で捕捉<br>
+            • <strong>機械学習モデルの導入:</strong> scikit-learnによる「真実回答時 vs 虚偽回答時」の分類器（SVM / Random Forest）学習と精度評価
+          </li>
+          <li><strong>② 実用的な『嘘発見アプリ』の開発:</strong><br>
+            • <code>3-WB.py</code> の同期技術を発展させ、Webカメラから<strong>「嘘らしさスコア(Deception Index)」</strong>をリアルタイム判定・描画するGUIアプリを実装<br>
+            • 質問提示と連動した自動判定・可視化ダッシュボードの構築
+          </li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- BOTTOM CONTROL BAR -->
+<div id="bottom-bar">
+  <div class="controls-left">
+    <button class="ctrl-btn" id="prev-btn" onclick="prevSlide()">◀ 前へ (←)</button>
+    <button class="ctrl-btn" id="next-btn" onclick="nextSlide()">次へ (→) ▶</button>
+  </div>
+  <div class="progress-track">
+    <div class="progress-fill" id="progress-bar"></div>
+  </div>
+  <div class="controls-right">
+    <span class="slide-counter" id="slide-num">1 / 10</span>
+    <button class="ctrl-btn" onclick="toggleFullscreen()">⛶ 全画面 (F)</button>
+  </div>
+</div>
+
+<script>
+  let currentSlide = 1;
+  const totalSlides = 10;
+
+  function showSlide(n) {
+    if (n < 1) n = 1;
+    if (n > totalSlides) n = totalSlides;
+    currentSlide = n;
+
+    document.querySelectorAll('.slide').forEach((slide, idx) => {
+      slide.classList.toggle('active', (idx + 1) === currentSlide);
+    });
+
+    document.getElementById('slide-num').innerText = `${currentSlide} / ${totalSlides}`;
+    document.getElementById('progress-bar').style.width = `${(currentSlide / totalSlides) * 100}%`;
+  }
+
+  function nextSlide() {
+    if (currentSlide < totalSlides) showSlide(currentSlide + 1);
+  }
+
+  function prevSlide() {
+    if (currentSlide > 1) showSlide(currentSlide - 1);
+  }
+
+  function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      if (document.exitFullscreen) document.exitFullscreen();
+    }
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter' || e.key === 'PageDown') {
+      nextSlide();
+    } else if (e.key === 'ArrowLeft' || e.key === 'Backspace' || e.key === 'PageUp') {
+      prevSlide();
+    } else if (e.key === 'f' || e.key === 'F') {
+      toggleFullscreen();
+    } else if (e.key === 'Home') {
+      showSlide(1);
+    } else if (e.key === 'End') {
+      showSlide(totalSlides);
+    }
+  });
+
+  showSlide(1);
+</script>
+</body>
+</html>
