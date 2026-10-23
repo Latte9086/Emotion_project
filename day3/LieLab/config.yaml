@@ -1,0 +1,36 @@
+paths:
+  raw: data/raw
+  metadata: data/metadata
+  openface: data/openface
+  processed: data/processed
+  splits: data/splits
+  models: models
+  results: results
+openface_binary: C:/Users/latte/Downloads/OpenFace_Ready/FeatureExtraction.exe
+dataset_url: https://web.eecs.umich.edu/~mihalcea/downloads/RealLifeDeceptionDetection.2016.zip
+confidence: 0.8
+valid_ratio: 0.8
+activation_threshold: 1.0
+max_gap_seconds: 0.2
+seed: 42
+outer_folds: 5
+inner_folds: 3
+permutation_repeats: 10
+extraction_timeout: 600
+temporal:
+  sample_hz: 5.0
+  window_seconds: 8.0
+  hidden_size: 8
+  epochs: 20
+  batch_videos: 16
+  learning_rate: 0.003
+  weight_decays: [0.01, 0.1]
+  threads: 1
+  shuffle_control: true
+minirocket:
+  sample_hz: 5.0
+  window_seconds: 8.0
+  num_kernels: 10000
+  max_dilations_per_kernel: 32
+  n_jobs: 1
+  alphas: [0.1, 1.0, 10.0, 100.0, 1000.0]
